@@ -15,51 +15,58 @@ export class ApiController {
 
   public async route(): Promise<void> {
     if (!this.req.url) return this.sendError(404);
-    const queryStringMatch = this.req.url.match(/\?(.*)/);
-    if (!queryStringMatch) return this.sendError(404);
+    const urlMatches = this.req.url.match(/([a-zA-Z-._~\/]+)(\?(.*))?/);
+    if (!urlMatches) return this.sendError(404);
 
-    const searchParams = new URLSearchParams(queryStringMatch[1]);
-    const action = searchParams.get('action');
-    const target = searchParams.get('target');
+    const path = urlMatches[1];
+    const searchParams = new URLSearchParams(urlMatches[3]);
 
-    // Query Validation
-    if (!action || !target) return this.sendError(401);
-
-    // Check secert
-    if (this.secret && this.secret !== this.req.headers['x-pm2-secret']) {
-      return this.sendError(403);
-    }
-
-    // Check registered process when target is all
-    if (target === 'all') {
-      await this.connectPM2();
-      const processes = await this.processes();
-      if (!processes.length) return this.sendError(500, 'No process registered in pm2');
-    }
-
-    try {
-      switch (action) {
-        case 'stop':
-          await this.stopProcess(target);
-          this.sendOK();
-          break;
-
-        case 'start':
-          await this.startProcess(target);
-          this.sendOK();
-          break;
-
-        case 'restart':
-          await this.restartProcess(target);
-          this.sendOK();
-          break;
-
-        default:
-          this.sendError(404);
-          break;
+    if (path === '/') {
+      // Check secert
+      if (this.secret && this.secret !== this.req.headers['x-pm2-secret']) {
+        return this.sendError(403);
       }
-    } catch (e) {
-      return this.sendError(500, e.toString());
+
+      // Query Validation
+      const action = searchParams.get('action');
+      const target = searchParams.get('target');
+      if (!action || !target) return this.sendError(401);
+
+      // Check registered process when target is all
+      if (target === 'all') {
+        await this.connectPM2();
+        const processes = await this.processes();
+        if (!processes.length) return this.sendError(500, 'No process registered in pm2');
+      }
+
+      try {
+        switch (action) {
+          case 'stop':
+            await this.stopProcess(target);
+            this.sendOK();
+            break;
+
+          case 'start':
+            await this.startProcess(target);
+            this.sendOK();
+            break;
+
+          case 'restart':
+            await this.restartProcess(target);
+            this.sendOK();
+            break;
+
+          default:
+            this.sendError(404);
+            break;
+        }
+      } catch (e) {
+        return this.sendError(500, e.toString());
+      }
+    } else if (path === '/_health') {
+      this.sendOK();
+    } else {
+      return this.sendError(404);
     }
   }
 

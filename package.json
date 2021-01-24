@@ -1,6 +1,6 @@
 {
   "name": "pm2-remote",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
     "pmx": "^1.6.7"
   },
   "config": {
-    "port": 9888,
+    "port": 9982,
     "secret": "secret"
   },
   "devDependencies": {
